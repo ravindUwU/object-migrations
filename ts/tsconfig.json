@@ -1,0 +1,12 @@
+// https://www.typescriptlang.org/tsconfig/
+{
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2022"],
+		"module": "node16",
+		"moduleResolution": "node16",
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"skipLibCheck": true,
+	},
+}

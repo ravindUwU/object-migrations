@@ -1,0 +1,15 @@
+{
+	"files.exclude": {
+		"**/node_modules/": true,
+	},
+	"files.readonlyInclude": {
+		"**/node_modules/**": true,
+		"**/pnpm-lock.yaml": true,
+	},
+
+	"editor.rulers": [100],
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"editor.formatOnSave": true,
+
+	"markdown.extension.italic.indicator": "_",
+}
