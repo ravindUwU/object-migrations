@@ -42,6 +42,7 @@ export default [
 				},
 				rules: {
 					'@typescript-eslint/explicit-function-return-type': 'error',
+					'@typescript-eslint/no-non-null-assertion': 'off',
 					'@typescript-eslint/no-floating-promises': [
 						'error',
 						{
@@ -49,6 +50,19 @@ export default [
 								{ from: 'package', package: 'node:test', name: 'test' },
 								{ from: 'package', package: 'node:test', name: 'suite' },
 							],
+						},
+					],
+					'@typescript-eslint/consistent-type-imports': [
+						'error',
+						{
+							fixStyle: 'inline-type-imports',
+						},
+					],
+					'@typescript-eslint/restrict-template-expressions': [
+						'error',
+						{
+							allowNumber: true,
+							allowBoolean: true,
 						},
 					],
 				},
