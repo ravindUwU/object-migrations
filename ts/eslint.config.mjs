@@ -1,4 +1,5 @@
 import jsEslint from '@eslint/js';
+import jsdocEslint from 'eslint-plugin-jsdoc';
 import tsEslint from 'typescript-eslint';
 import prettierRecommended from 'eslint-plugin-prettier/recommended';
 import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
@@ -70,6 +71,28 @@ export default [
 		],
 	),
 
+	// JSDoc
+	// https://github.com/gajus/eslint-plugin-jsdoc/
+	...scope(
+		['**/*.{mjs,ts}'],
+		[
+			{
+				plugins: {
+					jsdoc: jsdocEslint,
+				},
+				rules: {
+					'jsdoc/no-undefined-types': [
+						'warn',
+						{
+							markVariablesAsUsed: true,
+							disableReporting: true,
+						},
+					],
+				},
+			},
+		],
+	),
+
 	// Comments
 	// https://eslint-community.github.io/eslint-plugin-eslint-comments/
 	...scope(undefined, [
@@ -104,7 +127,6 @@ export default [
  * @returns {Config[]}
  *
  * @example
- *
  * ```javascript
  * import config1 from 'config1';
  * import configs2 from 'config2';
