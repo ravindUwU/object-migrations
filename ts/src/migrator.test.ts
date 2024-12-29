@@ -1,4 +1,4 @@
-import { test, suite, type TestContext } from 'node:test';
+import { test, suite, type TestContext, type Mock } from 'node:test';
 import { Migrator } from './migrator.js';
 import { MigrationError, NoMigrationStepsError } from './errors.js';
 
@@ -57,9 +57,38 @@ suite('Migrator', () => {
 			(e) => e instanceof MigrationError && e.cause instanceof TestError && e.cause.payload === s,
 		);
 	});
+
+	test('Uses cached steps in subsequent migrations', (t: TestContext) => {
+		const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
+		t.mock.method(m, 'computeSteps');
+
+		t.assert.ok(m.tryGetCachedSteps(1, 5) === undefined);
+
+		m.migrate(makeTestObj(1), 1, 5);
+		t.assert.ok(m.tryGetCachedSteps(1, 5) !== undefined);
+		t.assert.strictEqual(m.computeSteps.mock.callCount(), 1);
+		m.computeSteps.mock.resetCalls();
+
+		m.migrate(makeTestObj(1), 1, 5);
+		t.assert.strictEqual(m.computeSteps.mock.callCount(), 0);
+	});
 });
 
-// Helpers
+// Test framework helpers
+
+/* eslint-disable @typescript-eslint/no-unsafe-function-type -- Match any function */
+
+type FunctionNames<T> = {
+	[K in keyof T]: T[K] extends Function ? K : never;
+}[keyof T];
+
+type MockedObject<T, F extends FunctionNames<T>> = Omit<T, F> & {
+	[f in F]: T[f] extends Function ? Mock<T[f]> : never;
+};
+
+/* eslint-enable @typescript-eslint/no-unsafe-function-type -- Match any function */
+
+// Test helpers
 
 class TestError extends Error {
 	constructor(public readonly payload: unknown) {

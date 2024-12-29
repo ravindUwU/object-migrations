@@ -1,4 +1,4 @@
-import { MigrationError, NoMigrationStepsError, type MigratorError } from './errors.js';
+import { MigrationError, NoMigrationStepsError } from './errors.js';
 
 export type Version = string | number;
 
@@ -48,8 +48,7 @@ export class Migrator {
 	 * @param to The version to which the object is migrated.
 	 *
 	 * @remarks
-	 * May throw the following {@link MigratorError}s in the process: {@link NoMigrationStepsError},
-	 * {@link MigrationError}.
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 */
 	migrate<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
 		// Same versions? Return immediately.
@@ -60,31 +59,10 @@ export class Migrator {
 			};
 		}
 
-		// Assemble steps.
-		// Repeatedly append the step from the previous version, starting at version `to`, until
-		// (and including) the step whose previous version is `from`. Assuming versions 1 through 4
-		// and an object being migrated from 1 to 4, the assembled steps would be [3to4, 2to3, 1to2].
+		// Get steps.
 		let steps = this.tryGetCachedSteps(from, to);
 		if (steps === undefined) {
-			steps = [];
-
-			let step: Step | undefined = this.prevStep.get(to);
-			if (step === undefined) {
-				throw new NoMigrationStepsError(from, to);
-			}
-
-			while (step !== undefined) {
-				steps.push(step);
-				if (step.from === from) {
-					break;
-				}
-				step = this.prevStep.get(step.from);
-			}
-
-			if (steps.length === 0 || steps[steps.length - 1]!.from !== from) {
-				throw new NoMigrationStepsError(from, to);
-			}
-
+			steps = this.computeSteps(from, to);
 			this.cacheSteps(from, to, steps);
 		}
 
@@ -103,6 +81,41 @@ export class Migrator {
 			value: migratedObj as TTo,
 			changed: true,
 		};
+	}
+
+	/**
+	 * Computes steps to migrate an object from between two versions. Reverse-iterate the steps to
+	 * apply their migrations in order.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}.
+	 */
+	computeSteps(from: Version, to: Version): Step[] {
+		const steps: Step[] = [];
+
+		// Repeatedly append the step from the version that precedes the current version, starting
+		// at version `to`, until (and including) the step whose preceding version is `from`.
+		//
+		// Assuming versions 1 through 4 and an object being migrated from 1 to 4, the assembled
+		// steps would be [3to4, 2to3, 1to2].
+
+		let step: Step | undefined = this.prevStep.get(to);
+		if (step === undefined) {
+			throw new NoMigrationStepsError(from, to);
+		}
+
+		while (step !== undefined) {
+			steps.push(step);
+			if (step.from === from) {
+				break;
+			}
+			step = this.prevStep.get(step.from);
+		}
+
+		if (steps.length === 0 || steps[steps.length - 1]!.from !== from) {
+			throw new NoMigrationStepsError(from, to);
+		}
+		return steps;
 	}
 
 	readonly cache = new Map</* from */ Version, Map</* to */ Version, Step[]>>();
