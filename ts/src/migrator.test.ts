@@ -1,40 +1,40 @@
-import { test, suite } from 'node:test';
+import { test, suite, type TestContext } from 'node:test';
 import { Migrator } from './migrator.js';
 import { MigrationError, NoMigrationStepsError } from './errors.js';
 
 suite('Migrator', () => {
-	test('Returns the same object when from & to are the same', (t) => {
+	test('Returns the same object when from & to are the same', (t: TestContext) => {
 		const m = makeTestObjMigrator();
 		const o = makeTestObj(1);
 		const res = m.migrate<TestObj<2>>(o, 1, 1);
 
-		t.assert.equal(res.changed, false);
-		t.assert.equal(res.value, o);
+		t.assert.strictEqual(res.changed, false);
+		t.assert.strictEqual(res.value, o);
 	});
 
-	test('Runs steps in order', async (t) => {
+	test('Runs steps in order', async (t: TestContext) => {
 		const m = makeTestObjMigrator();
 
-		await t.test('1 to 5', (t) => {
+		await t.test('1 to 5', (t: TestContext) => {
 			const o = makeTestObj(1);
 			const res = m.migrate<TestObj<5>>(o, 1, 5);
 
-			t.assert.equal(res.changed, true);
-			t.assert.equal(res.value.version, 5);
-			t.assert.deepEqual(res.value.sequence, [1, 2, 3, 4, 5]);
+			t.assert.strictEqual(res.changed, true);
+			t.assert.strictEqual(res.value.version, 5);
+			t.assert.deepStrictEqual(res.value.sequence, [1, 2, 3, 4, 5]);
 		});
 
-		await t.test('2 to 4', (t) => {
+		await t.test('2 to 4', (t: TestContext) => {
 			const o = makeTestObj(2);
 			const res = m.migrate<TestObj<4>>(o, 2, 4);
 
-			t.assert.equal(res.changed, true);
-			t.assert.equal(res.value.version, 4);
-			t.assert.deepEqual(res.value.sequence, [2, 3, 4]);
+			t.assert.strictEqual(res.changed, true);
+			t.assert.strictEqual(res.value.version, 4);
+			t.assert.deepStrictEqual(res.value.sequence, [2, 3, 4]);
 		});
 	});
 
-	test('Throws when there are no steps between from & to', (t) => {
+	test('Throws when there are no steps between from & to', (t: TestContext) => {
 		const m = makeTestObjMigrator();
 
 		t.assert.throws(() => {
@@ -42,7 +42,7 @@ suite('Migrator', () => {
 		}, NoMigrationStepsError);
 	});
 
-	test('Wraps errors thrown during migrations', (t) => {
+	test('Wraps errors thrown during migrations', (t: TestContext) => {
 		const m = new Migrator();
 		const s = Symbol();
 
