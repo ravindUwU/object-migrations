@@ -5,7 +5,6 @@ export type Version = string | number;
 export type Migration<TFrom, TTo> = (fromObject: TFrom) => TTo;
 
 export interface Step {
-	readonly from: Version;
 	readonly to: Version;
 	readonly migration: Migration<unknown, unknown>;
 }
@@ -27,14 +26,13 @@ export interface Migrated<TTo> {
 }
 
 export class Migrator {
-	readonly prevStep = new Map<Version, Step>();
+	readonly nextStep = new Map<Version, Step>();
 
 	/**
 	 * Registers a migration between two successive versions.
 	 */
 	register<TFrom, TTo>(from: Version, to: Version, migration: Migration<TFrom, TTo>): void {
-		this.prevStep.set(to, {
-			from,
+		this.nextStep.set(from, {
 			to,
 			migration: migration as Migration<unknown, unknown>,
 		});
@@ -68,11 +66,10 @@ export class Migrator {
 		}
 
 		// Migrate.
-		// Reverse-iterate steps, apply each function.
 		let migratedObj = obj;
-		for (let i = steps.length - 1; i >= 0; i--) {
+		for (const step of steps) {
 			try {
-				migratedObj = steps[i]!.migration(migratedObj);
+				migratedObj = step.migration(migratedObj);
 			} catch (e: unknown) {
 				throw new MigrationError(from, to, e);
 			}
@@ -85,8 +82,8 @@ export class Migrator {
 	}
 
 	/**
-	 * Computes steps to migrate an object from between two versions. Reverse-iterate the steps to
-	 * apply their migrations in order.
+	 * Computes steps to migrate an object from between two versions. Iterate the steps and apply
+	 * their migrations in order to migrate the object.
 	 *
 	 * @remarks
 	 * Throws: {@link NoMigrationStepsError}.
@@ -94,28 +91,29 @@ export class Migrator {
 	computeSteps(from: Version, to: Version): Step[] {
 		const steps: Step[] = [];
 
-		// Repeatedly append the step from the version that precedes the current version, starting
-		// at version `to`, until (and including) the step whose preceding version is `from`.
+		// Repeatedly append the next step, starting at version `from`, until (and including) the
+		// step that results in version `to`.
 		//
-		// Assuming versions 1 through 4 and an object being migrated from 1 to 4, the assembled
-		// steps would be [3to4, 2to3, 1to2].
+		// Assuming versions 1 through 4 are registered, and an object is being migrated from 1 to 4,
+		// the computed steps would be [1to2, 2to3, 3to4].
 
-		let step: Step | undefined = this.prevStep.get(to);
+		let step: Step | undefined = this.nextStep.get(from);
 		if (step === undefined) {
 			throw new NoMigrationStepsError(from, to);
 		}
 
 		while (step !== undefined) {
 			steps.push(step);
-			if (step.from === from) {
+			if (step.to === to) {
 				break;
 			}
-			step = this.prevStep.get(step.from);
+			step = this.nextStep.get(step.to);
 		}
 
-		if (steps.length === 0 || steps[steps.length - 1]!.from !== from) {
+		if (steps.length === 0 || steps[steps.length - 1]!.to !== to) {
 			throw new NoMigrationStepsError(from, to);
 		}
+
 		return steps;
 	}
 
