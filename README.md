@@ -21,7 +21,7 @@ m.register<V2, V3>(2, 3, (v2) => new V3());
 const storeData = store.read();
 
 // Migrate data (always; or just if storeData.version !== 3 🤷).
-const migrated = m.migrate<V3>(storeData, storeData.version ?? 1, 3);
+const migrated = m.forward<V3>(storeData, storeData.version ?? 1, 3);
 if (migrated.changed) {
 	store.write(migrated.value);
 }
@@ -36,9 +36,9 @@ const data: V3 = migrated.value;
 
   - [x] Basics <br> _With `1to2` and `2to3` registered, `migrate(1, 3)` does `1to2`,`2to3`._
   - [x] Caching
-  - [ ] Bidirectional migrations <br> _With `2to1` and `3to2` registered along with `1to2` and
+  - [x] Bidirectional migrations <br> _With `2to1` and `3to2` registered along with `1to2` and
         `2to3`, `migrate(3, 1)` does `3to2`, `2to1`._
-  - [ ] Short circuiting <br> _With `1to2`, `2to3` and `1to3` registered, `migrate(1, 3)` uses
+  - [ ] Short circuiting <br> _With `1to2`, `2to3` and `1to3` registered, `migrate(1, 3)` does
         `1to3` instead of `1to2`,`2to3`_
 
 - TypeScript implementation:

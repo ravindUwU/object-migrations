@@ -26,21 +26,34 @@ export interface Migrated<TTo> {
 }
 
 export class Migrator {
-	readonly nextStep = new Map<Version, Step>();
+	readonly forwardStep = new Map<Version, Step>();
+	readonly backwardStep = new Map<Version, Step>();
 
 	/**
-	 * Registers a migration between two successive versions.
+	 * Registers the forward and (optionally) backward migrations between two successive versions.
 	 */
-	register<TFrom, TTo>(from: Version, to: Version, migration: Migration<TFrom, TTo>): void {
-		this.nextStep.set(from, {
+	register<TFrom, TTo>(
+		from: Version,
+		to: Version,
+		forward: Migration<TFrom, TTo>,
+		backward?: Migration<TFrom, TTo>,
+	): void {
+		this.forwardStep.set(from, {
 			to,
-			migration: migration as Migration<unknown, unknown>,
+			migration: forward as Migration<unknown, unknown>,
 		});
+
+		if (backward !== undefined) {
+			this.backwardStep.set(to, {
+				to: from,
+				migration: backward as Migration<unknown, unknown>,
+			});
+		}
 	}
 
 	/**
-	 * Migrates an object between two versions. Immediately returns a result with the same object,
-	 * if the two versions are the same.
+	 * Migrates an object forward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
 	 *
 	 * @param obj The object to migrate.
 	 * @param from The version of the object.
@@ -49,7 +62,31 @@ export class Migrator {
 	 * @remarks
 	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 */
-	migrate<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
+	forward<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
+		return this.migrateInternal<TTo>(obj, from, to, this.forwardStep);
+	}
+
+	/**
+	 * Migrates an object backward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @param obj The object to migrate.
+	 * @param from The version of the object.
+	 * @param to The version to which the object is migrated.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 */
+	backward<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
+		return this.migrateInternal<TTo>(obj, from, to, this.backwardStep);
+	}
+
+	migrateInternal<TTo>(
+		obj: unknown,
+		from: Version,
+		to: Version,
+		nextStep: Map<Version, Step>,
+	): Migrated<TTo> {
 		// Same versions? Return immediately.
 		if (from === to) {
 			return {
@@ -61,7 +98,7 @@ export class Migrator {
 		// Get steps.
 		let steps = this.tryGetCachedSteps(from, to);
 		if (steps === undefined) {
-			steps = this.computeSteps(from, to);
+			steps = this.computeSteps(from, to, nextStep);
 			this.cacheSteps(from, to, steps);
 		}
 
@@ -88,7 +125,7 @@ export class Migrator {
 	 * @remarks
 	 * Throws: {@link NoMigrationStepsError}.
 	 */
-	computeSteps(from: Version, to: Version): Step[] {
+	computeSteps(from: Version, to: Version, nextStep: Map<Version, Step>): Step[] {
 		const steps: Step[] = [];
 
 		// Repeatedly append the next step, starting at version `from`, until (and including) the
@@ -97,7 +134,7 @@ export class Migrator {
 		// Assuming versions 1 through 4 are registered, and an object is being migrated from 1 to 4,
 		// the computed steps would be [1to2, 2to3, 3to4].
 
-		let step: Step | undefined = this.nextStep.get(from);
+		let step: Step | undefined = nextStep.get(from);
 		if (step === undefined) {
 			throw new NoMigrationStepsError(from, to);
 		}
@@ -107,7 +144,7 @@ export class Migrator {
 			if (step.to === to) {
 				break;
 			}
-			step = this.nextStep.get(step.to);
+			step = nextStep.get(step.to);
 		}
 
 		if (steps.length === 0 || steps[steps.length - 1]!.to !== to) {

@@ -3,74 +3,146 @@ import { Migrator } from './migrator.js';
 import { MigrationError, NoMigrationStepsError } from './errors.js';
 
 suite('Migrator', () => {
-	test('Returns the same object when from & to are the same', (t: TestContext) => {
+	suite('Returns the same object when from & to are the same', () => {
 		const m = makeTestObjMigrator();
 		const o = makeTestObj(1);
-		const res = m.migrate<TestObj<2>>(o, 1, 1);
 
-		t.assert.strictEqual(res.changed, false);
-		t.assert.strictEqual(res.value, o);
+		test('Forward', (t: TestContext) => {
+			const res = m.forward<TestObj<3>>(o, 3, 3);
+
+			t.assert.strictEqual(res.changed, false);
+			t.assert.strictEqual(res.value, o);
+		});
+
+		test('Backward', (t: TestContext) => {
+			const res = m.backward<TestObj<3>>(o, 3, 3);
+
+			t.assert.strictEqual(res.changed, false);
+			t.assert.strictEqual(res.value, o);
+		});
 	});
 
 	suite('Runs steps in order', () => {
 		const m = makeTestObjMigrator();
 
-		test('1 to 5', (t: TestContext) => {
+		test('Forward 1 to 5', (t: TestContext) => {
 			const o = makeTestObj(1);
-			const res = m.migrate<TestObj<5>>(o, 1, 5);
+			const res = m.forward<TestObj<5>>(o, 1, 5);
 
 			t.assert.strictEqual(res.changed, true);
 			t.assert.strictEqual(res.value.version, 5);
 			t.assert.deepStrictEqual(res.value.sequence, [1, 2, 3, 4, 5]);
 		});
 
-		test('2 to 4', (t: TestContext) => {
+		test('Forward 2 to 4', (t: TestContext) => {
 			const o = makeTestObj(2);
-			const res = m.migrate<TestObj<4>>(o, 2, 4);
+			const res = m.forward<TestObj<4>>(o, 2, 4);
 
 			t.assert.strictEqual(res.changed, true);
 			t.assert.strictEqual(res.value.version, 4);
 			t.assert.deepStrictEqual(res.value.sequence, [2, 3, 4]);
 		});
-	});
 
-	test('Throws when there are no steps between from & to', (t: TestContext) => {
-		const m = makeTestObjMigrator();
+		test('Backward 5 to 1', (t: TestContext) => {
+			const o = makeTestObj(5);
+			const res = m.backward<TestObj<1>>(o, 5, 1);
 
-		t.assert.throws(() => {
-			m.migrate(makeTestObj(1), 1, -1);
-		}, NoMigrationStepsError);
-	});
-
-	test('Wraps errors thrown during migrations', (t: TestContext) => {
-		const m = new Migrator();
-		const s = Symbol();
-
-		m.register<TestObj<1>, TestObj<2>>(1, 2, () => {
-			throw new TestError(s);
+			t.assert.strictEqual(res.changed, true);
+			t.assert.strictEqual(res.value.version, 1);
+			t.assert.deepStrictEqual(res.value.sequence, [5, 4, 3, 2, 1]);
 		});
 
-		t.assert.throws(
-			() => {
-				m.migrate(makeTestObj(1), 1, 2);
-			},
-			(e) => e instanceof MigrationError && e.cause instanceof TestError && e.cause.payload === s,
-		);
+		test('Backward 4 to 2', (t: TestContext) => {
+			const o = makeTestObj(4);
+			const res = m.backward<TestObj<2>>(o, 4, 2);
+
+			t.assert.strictEqual(res.changed, true);
+			t.assert.strictEqual(res.value.version, 2);
+			t.assert.deepStrictEqual(res.value.sequence, [4, 3, 2]);
+		});
 	});
 
-	test('Uses cached steps in subsequent migrations', (t: TestContext) => {
-		const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
-		t.mock.method(m, 'computeSteps');
+	suite('Throws when there are no steps between from & to', () => {
+		const m = makeTestObjMigrator();
 
-		t.assert.ok(m.tryGetCachedSteps(1, 5) === undefined);
+		test('Forward', (t: TestContext) => {
+			t.assert.throws(() => {
+				m.forward(makeTestObj(1), 1, -1);
+			}, NoMigrationStepsError);
+		});
 
-		m.migrate(makeTestObj(1), 1, 5);
-		t.assert.ok(m.tryGetCachedSteps(1, 5) !== undefined);
-		t.assert.strictEqual(m.computeSteps.mock.callCount(), 1);
-		m.computeSteps.mock.resetCalls();
+		test('Backward', (t: TestContext) => {
+			t.assert.throws(() => {
+				m.backward(makeTestObj(1), 1, -1);
+			}, NoMigrationStepsError);
+		});
+	});
 
-		m.migrate(makeTestObj(1), 1, 5);
-		t.assert.strictEqual(m.computeSteps.mock.callCount(), 0);
+	suite('Wraps errors thrown during migrations', () => {
+		const m = new Migrator();
+
+		m.register<TestObj<1>, TestObj<2>>(
+			1,
+			2,
+			() => {
+				throw new TestError('forward');
+			},
+			() => {
+				throw new TestError('backward');
+			},
+		);
+
+		test('Forward', (t: TestContext) => {
+			t.assert.throws(
+				() => {
+					m.forward(makeTestObj(1), 1, 2);
+				},
+				(e) =>
+					e instanceof MigrationError &&
+					e.cause instanceof TestError &&
+					e.cause.payload === 'forward',
+			);
+		});
+
+		test('Backward', (t: TestContext) => {
+			t.assert.throws(
+				() => {
+					m.backward(makeTestObj(2), 2, 1);
+				},
+				(e) =>
+					e instanceof MigrationError &&
+					e.cause instanceof TestError &&
+					e.cause.payload === 'backward',
+			);
+		});
+	});
+
+	suite('Uses cached steps in subsequent migrations', () => {
+		test('Forward', (t: TestContext) => {
+			const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
+			t.mock.method(m, 'computeSteps');
+
+			m.forward(makeTestObj(1), 1, 5);
+			t.assert.ok(m.tryGetCachedSteps(1, 5) !== undefined);
+			t.assert.strictEqual(m.computeSteps.mock.callCount(), 1);
+			m.computeSteps.mock.resetCalls();
+
+			m.forward(makeTestObj(1), 1, 5);
+			t.assert.strictEqual(m.computeSteps.mock.callCount(), 0);
+		});
+
+		test('Backward', (t: TestContext) => {
+			const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
+			t.mock.method(m, 'computeSteps');
+
+			m.backward(makeTestObj(5), 5, 1);
+			t.assert.ok(m.tryGetCachedSteps(5, 1) !== undefined);
+			t.assert.strictEqual(m.computeSteps.mock.callCount(), 1);
+			m.computeSteps.mock.resetCalls();
+
+			m.backward(makeTestObj(5), 5, 1);
+			t.assert.strictEqual(m.computeSteps.mock.callCount(), 0);
+		});
 	});
 });
 
@@ -113,12 +185,22 @@ function makeTestObjMigrator(): Migrator {
 	const m = new Migrator();
 
 	function register(fromVersion: number, toVersion: number): void {
-		m.register<TestObj<number>, TestObj<number>>(fromVersion, toVersion, (fromObject) => {
-			return {
-				version: toVersion,
-				sequence: [...fromObject.sequence, toVersion],
-			};
-		});
+		m.register<TestObj<number>, TestObj<number>>(
+			fromVersion,
+			toVersion,
+			(o) => {
+				return {
+					version: toVersion,
+					sequence: [...o.sequence, toVersion],
+				};
+			},
+			(o) => {
+				return {
+					version: fromVersion,
+					sequence: [...o.sequence, fromVersion],
+				};
+			},
+		);
 	}
 
 	register(1, 2);
