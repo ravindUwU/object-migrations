@@ -41,7 +41,8 @@ export class Migrator {
 	}
 
 	/**
-	 * Migrates an object between two versions.
+	 * Migrates an object between two versions. Immediately returns a result with the same object,
+	 * if the two versions are the same.
 	 *
 	 * @param obj The object to migrate.
 	 * @param from The version of the object.
