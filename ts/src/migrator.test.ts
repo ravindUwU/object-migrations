@@ -12,10 +12,10 @@ suite('Migrator', () => {
 		t.assert.strictEqual(res.value, o);
 	});
 
-	test('Runs steps in order', async (t: TestContext) => {
+	suite('Runs steps in order', () => {
 		const m = makeTestObjMigrator();
 
-		await t.test('1 to 5', (t: TestContext) => {
+		test('1 to 5', (t: TestContext) => {
 			const o = makeTestObj(1);
 			const res = m.migrate<TestObj<5>>(o, 1, 5);
 
@@ -24,7 +24,7 @@ suite('Migrator', () => {
 			t.assert.deepStrictEqual(res.value.sequence, [1, 2, 3, 4, 5]);
 		});
 
-		await t.test('2 to 4', (t: TestContext) => {
+		test('2 to 4', (t: TestContext) => {
 			const o = makeTestObj(2);
 			const res = m.migrate<TestObj<4>>(o, 2, 4);
 
