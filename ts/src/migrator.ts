@@ -26,13 +26,34 @@ export interface Migrated<TTo> {
 	readonly changed: boolean;
 }
 
-export class Migrator {
+export class Migrator<TVersions = unknown> {
 	readonly forwardStep = new Map<Version, Step>();
 	readonly backwardStep = new Map<Version, Step>();
 
 	/**
 	 * Registers the forward and (optionally) backward migrations between two successive versions.
 	 */
+	register<TFrom, TTo>(
+		from: Class<TFrom>,
+		to: Class<TTo>,
+		forward: Migration<TFrom, TTo>,
+		backward?: Migration<TTo, TFrom>,
+	): void;
+
+	register<TFrom extends keyof TVersions, TTo extends keyof TVersions>(
+		from: TFrom,
+		to: TTo,
+		forward: Migration<TVersions[TFrom], TVersions[TTo]>,
+		backward?: Migration<TVersions[TTo], TVersions[TFrom]>,
+	): void;
+
+	register<TFrom, TTo>(
+		from: Version,
+		to: Version,
+		forward: Migration<TFrom, TTo>,
+		backward?: Migration<TTo, TFrom>,
+	): void;
+
 	register<TFrom, TTo>(
 		from: Version | Class<TFrom>,
 		to: Version | Class<TTo>,
@@ -72,9 +93,15 @@ export class Migrator {
 	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 *
 	 * @param obj The object to migrate.
-	 * @param from The version of the object.
-	 * @param to The version to which the object is migrated.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
 	 */
+	forward<TTo extends keyof TVersions>(
+		obj: object,
+		fromVersion: Version,
+		toVersion: TTo,
+	): Migrated<TVersions[TTo]>;
+
 	forward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	forward<TTo>(
@@ -112,9 +139,15 @@ export class Migrator {
 	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 *
 	 * @param obj The object to migrate.
-	 * @param from The version of the object.
-	 * @param to The version to which the object is migrated.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
 	 */
+	backward<TTo extends keyof TVersions>(
+		obj: object,
+		fromVersion: Version,
+		toVersion: TTo,
+	): Migrated<TVersions[TTo]>;
+
 	backward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	backward<TTo>(obj: object, fromVersionOrToClass: Version, toVersion?: Version): Migrated<TTo> {

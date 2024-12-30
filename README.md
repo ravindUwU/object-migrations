@@ -15,7 +15,15 @@ Linear, in-memory migrations for versioned objects.
 
 ```typescript
 // 1. Make a migrator.
+
+// 1.1.
 const m = new Migrator();
+
+// 1.2. Optionally, with predefined version-type mappings.
+const m = new Migrator<{
+	1: V1;
+	2: V2;
+}>();
 
 // 2. Register migrations.
 
@@ -57,7 +65,7 @@ const data: V3 = migrated.value;
 
 - TypeScript implementation:
 
-  - [ ] Optional type inference from versions when migrating plain objects?
+  - [x] Optional type inference from versions when migrating plain objects?
   - [x] Friendlier way to migrate objects that are instances of classes (not plain objects)
   - [ ] Async
   - [ ] ESM package

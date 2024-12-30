@@ -1,5 +1,5 @@
 import { type Migrated, type Migrator } from './migrator.js';
-import { TestClass1, TestClass5 } from './migrator.test-util.js';
+import { TestClass1, TestClass5, type TestObj } from './migrator.test-util.js';
 import { expectTypeOf } from 'expect-type';
 
 {
@@ -19,12 +19,30 @@ import { expectTypeOf } from 'expect-type';
 	expectTypeOf<TestClass1>().not.toEqualTypeOf<TestClass5>();
 }
 
+// Classes
 {
 	const m: Migrator = null!;
 
-	// Test: Return type inferred when migrating classes forward.
+	// Test: Return type inferred when migrating forward.
 	expectTypeOf(m.forward(new TestClass1(), TestClass5)).toEqualTypeOf<Migrated<TestClass5>>();
 
-	// Test: Return type inferred when migrating classes backward.
+	// Test: Return type inferred when migrating backward.
 	expectTypeOf(m.backward(new TestClass5(), TestClass1)).toEqualTypeOf<Migrated<TestClass1>>();
+}
+
+// Predefined versions
+{
+	const m: Migrator<{
+		1: TestObj<1>;
+		5: TestObj<5>;
+	}> = null!;
+
+	const o1: TestObj<1> = null!;
+	const o5: TestObj<1> = null!;
+
+	// Test: Return type inferred when migrating forward.
+	expectTypeOf(m.forward(o1, 1, 5)).toEqualTypeOf<Migrated<TestObj<5>>>();
+
+	// Test: Return type inferred when migrating backward.
+	expectTypeOf(m.backward(o5, 5, 1)).toEqualTypeOf<Migrated<TestObj<1>>>();
 }
