@@ -11,22 +11,36 @@
 
 Linear, in-memory migrations for versioned objects.
 
+## Usage
+
 ```typescript
-// Register migrations.
+// 1. Make a migrator.
 const m = new Migrator();
-m.register<V1, V2>(1, 2, (v1) => new V2());
-m.register<V2, V3>(2, 3, (v2) => new V3());
 
-// Read data. V1? V2? V3?
-const storeData = store.read();
+// 2. Register migrations.
 
-// Migrate data (always; or just if storeData.version !== 3 🤷).
-const migrated = m.forward<V3>(storeData, storeData.version ?? 1, 3);
+// 2.1. Plain objects?
+m.register<V1, V2>(1, 2, (v1) => ({ v: 2 }));
+m.register<V2, V3>(2, 3, (v2) => ({ v: 3 }));
+
+// 2.2. Classes?
+m.register(V1, V2, (v1) => new V2());
+m.register(V2, V3, (v2) => new V3());
+
+// 3. Read & migrate data (always; or just if it's outdated).
+const storeData: V1 | V2 | V3 = store.read();
+
+// 3.1. Plain objects?
+const migrated = m.forward<V3>(storeData, storeData.version, 3);
+
+// 3.2. Classes?
+const migrated = m.forward(storeData, V3);
+
+// 4. Use the migrated data 🎉
 if (migrated.changed) {
 	store.write(migrated.value);
 }
 
-// Use V3 🎉.
 const data: V3 = migrated.value;
 ```
 
@@ -44,7 +58,7 @@ const data: V3 = migrated.value;
 - TypeScript implementation:
 
   - [ ] Optional type inference from versions when migrating plain objects?
-  - [ ] Friendlier way to migrate objects that are instances of classes (not plain objects)
+  - [x] Friendlier way to migrate objects that are instances of classes (not plain objects)
   - [ ] Async
   - [ ] ESM package
   - [ ] UMD package
