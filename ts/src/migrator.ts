@@ -84,11 +84,11 @@ export class Migrator {
 	): Migrated<TTo> {
 		if (toVersion !== undefined) {
 			const fromVersion = fromVersionOrToClass;
-			return this.migrateInternal<TTo>(obj, fromVersion, toVersion, this.forwardStep);
+			return this.migrate<TTo>(obj, fromVersion, toVersion, this.forwardStep);
 		} else {
 			const fromClass = obj.constructor;
 			const toClass = fromVersionOrToClass;
-			return this.migrateInternal<TTo>(obj, fromClass, toClass, this.forwardStep);
+			return this.migrate<TTo>(obj, fromClass, toClass, this.forwardStep);
 		}
 	}
 
@@ -120,15 +120,15 @@ export class Migrator {
 	backward<TTo>(obj: object, fromVersionOrToClass: Version, toVersion?: Version): Migrated<TTo> {
 		if (toVersion !== undefined) {
 			const fromVersion = fromVersionOrToClass;
-			return this.migrateInternal<TTo>(obj, fromVersion, toVersion, this.backwardStep);
+			return this.migrate<TTo>(obj, fromVersion, toVersion, this.backwardStep);
 		} else {
 			const fromClass = obj.constructor;
 			const toClass = fromVersionOrToClass;
-			return this.migrateInternal<TTo>(obj, fromClass, toClass, this.backwardStep);
+			return this.migrate<TTo>(obj, fromClass, toClass, this.backwardStep);
 		}
 	}
 
-	migrateInternal<TTo>(
+	migrate<TTo>(
 		obj: unknown,
 		from: Version,
 		to: Version,
