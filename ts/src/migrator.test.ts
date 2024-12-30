@@ -1,6 +1,8 @@
-import { test, suite, type TestContext, type Mock } from 'node:test';
+import { test, suite, type TestContext } from 'node:test';
 import { Migrator } from './migrator.js';
 import { MigrationError, NoMigrationStepsError } from './errors.js';
+import { TestError, type Mocked } from './test-util.js';
+import { makeTestObj, makeTestObjMigrator, type TestObj } from './migrator.test-util.js';
 
 suite('Migrator', () => {
 	suite('Returns the same object when from & to are the same', () => {
@@ -119,7 +121,7 @@ suite('Migrator', () => {
 
 	suite('Uses cached steps in subsequent migrations', () => {
 		test('Forward', (t: TestContext) => {
-			const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
+			const m = makeTestObjMigrator() as Mocked<Migrator, 'computeSteps'>;
 			t.mock.method(m, 'computeSteps');
 
 			m.forward(makeTestObj(1), 1, 5);
@@ -132,7 +134,7 @@ suite('Migrator', () => {
 		});
 
 		test('Backward', (t: TestContext) => {
-			const m = makeTestObjMigrator() as MockedObject<Migrator, 'computeSteps'>;
+			const m = makeTestObjMigrator() as Mocked<Migrator, 'computeSteps'>;
 			t.mock.method(m, 'computeSteps');
 
 			m.backward(makeTestObj(5), 5, 1);
@@ -145,64 +147,3 @@ suite('Migrator', () => {
 		});
 	});
 });
-
-// Test framework helpers
-
-type FunctionNames<T> = {
-	[K in keyof T]: T[K] extends Function ? K : never;
-}[keyof T];
-
-type MockedObject<T, F extends FunctionNames<T>> = Omit<T, F> & {
-	[f in F]: T[f] extends Function ? Mock<T[f]> : never;
-};
-
-// Test helpers
-
-class TestError extends Error {
-	constructor(public readonly payload: unknown) {
-		super('TestError');
-		this.name = 'TestError';
-	}
-}
-
-interface TestObj<V extends number> {
-	readonly version: V;
-	readonly sequence: number[];
-}
-
-function makeTestObj<V extends number>(v: V): TestObj<V> {
-	return {
-		version: v,
-		sequence: [v],
-	};
-}
-
-function makeTestObjMigrator(): Migrator {
-	const m = new Migrator();
-
-	function register(fromVersion: number, toVersion: number): void {
-		m.register<TestObj<number>, TestObj<number>>(
-			fromVersion,
-			toVersion,
-			(o) => {
-				return {
-					version: toVersion,
-					sequence: [...o.sequence, toVersion],
-				};
-			},
-			(o) => {
-				return {
-					version: fromVersion,
-					sequence: [...o.sequence, fromVersion],
-				};
-			},
-		);
-	}
-
-	register(1, 2);
-	register(2, 3);
-	register(3, 4);
-	register(4, 5);
-
-	return m;
-}

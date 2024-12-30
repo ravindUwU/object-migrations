@@ -36,3 +36,22 @@ export type Class<T> = Function &
 		make(Thing);
 		// Argument of type 'typeof Thing' is not assignable to parameter of type 'never'
 */
+
+/**
+ * Union of all keys whose values are functions.
+ *
+ * @example
+ * ```typescript
+ * class Thing {
+ *     s = '';
+ *     f1() {}
+ *     f2() {}
+ * }
+ * function doWithThing(t: Thing, name: FunctionNames<Thing>): void {
+ *     // name is 'f1' | 'f2'
+ * }
+ * ```
+ */
+export type FunctionNames<T> = {
+	[K in keyof T]: T[K] extends Function ? K : never;
+}[keyof T];
