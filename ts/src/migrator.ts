@@ -36,7 +36,7 @@ export class Migrator {
 		from: Version,
 		to: Version,
 		forward: Migration<TFrom, TTo>,
-		backward?: Migration<TFrom, TTo>,
+		backward?: Migration<TTo, TFrom>,
 	): void {
 		this.forwardStep.set(from, {
 			to,
