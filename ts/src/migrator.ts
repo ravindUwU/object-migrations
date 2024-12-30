@@ -1,6 +1,7 @@
 import { MigrationError, NoMigrationStepsError } from './errors.js';
+import { type Class } from './util.js';
 
-export type Version = string | number;
+export type Version = string | number | symbol | Function;
 
 export type Migration<TFrom, TTo> = (fromObject: TFrom) => TTo;
 
@@ -33,8 +34,8 @@ export class Migrator {
 	 * Registers the forward and (optionally) backward migrations between two successive versions.
 	 */
 	register<TFrom, TTo>(
-		from: Version,
-		to: Version,
+		from: Version | Class<TFrom>,
+		to: Version | Class<TTo>,
 		forward: Migration<TFrom, TTo>,
 		backward?: Migration<TTo, TFrom>,
 	): void {
@@ -52,33 +53,79 @@ export class Migrator {
 	}
 
 	/**
+	 * Migrates an object that is an instance of a class (i.e., not a plain object) forward, to an
+	 * instance of another class.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param toClass The class to which the object is migrated.
+	 */
+	forward<TTo>(obj: object, toClass: Class<TTo>): Migrated<TTo>;
+
+	/**
 	 * Migrates an object forward between two versions. Immediately returns a result with the same
 	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 *
 	 * @param obj The object to migrate.
 	 * @param from The version of the object.
 	 * @param to The version to which the object is migrated.
+	 */
+	forward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
+
+	forward<TTo>(
+		obj: object,
+		fromVersionOrToClass: Version | Class<TTo>,
+		toVersion?: Version,
+	): Migrated<TTo> {
+		if (toVersion !== undefined) {
+			const fromVersion = fromVersionOrToClass;
+			return this.migrateInternal<TTo>(obj, fromVersion, toVersion, this.forwardStep);
+		} else {
+			const fromClass = obj.constructor;
+			const toClass = fromVersionOrToClass;
+			return this.migrateInternal<TTo>(obj, fromClass, toClass, this.forwardStep);
+		}
+	}
+
+	/**
+	 * Migrates an object that is an instance of a class (i.e., not a plain object) backward, to an
+	 * instance of another class.
 	 *
 	 * @remarks
 	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param toClass The class to which the object is migrated.
 	 */
-	forward<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
-		return this.migrateInternal<TTo>(obj, from, to, this.forwardStep);
-	}
+	backward<TTo>(obj: object, toClass: Class<TTo>): Migrated<TTo>;
 
 	/**
 	 * Migrates an object backward between two versions. Immediately returns a result with the same
 	 * object, if the two versions are the same.
 	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
 	 * @param obj The object to migrate.
 	 * @param from The version of the object.
 	 * @param to The version to which the object is migrated.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 */
-	backward<TTo>(obj: unknown, from: Version, to: Version): Migrated<TTo> {
-		return this.migrateInternal<TTo>(obj, from, to, this.backwardStep);
+	backward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
+
+	backward<TTo>(obj: object, fromVersionOrToClass: Version, toVersion?: Version): Migrated<TTo> {
+		if (toVersion !== undefined) {
+			const fromVersion = fromVersionOrToClass;
+			return this.migrateInternal<TTo>(obj, fromVersion, toVersion, this.backwardStep);
+		} else {
+			const fromClass = obj.constructor;
+			const toClass = fromVersionOrToClass;
+			return this.migrateInternal<TTo>(obj, fromClass, toClass, this.backwardStep);
+		}
 	}
 
 	migrateInternal<TTo>(

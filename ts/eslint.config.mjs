@@ -44,6 +44,7 @@ export default [
 				rules: {
 					'@typescript-eslint/explicit-function-return-type': 'error',
 					'@typescript-eslint/no-non-null-assertion': 'off',
+					'@typescript-eslint/no-unsafe-function-type': 'off',
 					'@typescript-eslint/no-floating-promises': [
 						'error',
 						{

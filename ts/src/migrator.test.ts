@@ -148,8 +148,6 @@ suite('Migrator', () => {
 
 // Test framework helpers
 
-/* eslint-disable @typescript-eslint/no-unsafe-function-type -- Match any function */
-
 type FunctionNames<T> = {
 	[K in keyof T]: T[K] extends Function ? K : never;
 }[keyof T];
@@ -157,8 +155,6 @@ type FunctionNames<T> = {
 type MockedObject<T, F extends FunctionNames<T>> = Omit<T, F> & {
 	[f in F]: T[f] extends Function ? Mock<T[f]> : never;
 };
-
-/* eslint-enable @typescript-eslint/no-unsafe-function-type -- Match any function */
 
 // Test helpers
 

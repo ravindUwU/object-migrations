@@ -32,7 +32,10 @@ export class MigrationError extends MigratorError {
 		 */
 		public readonly cause: unknown,
 	) {
-		super('MigrationError', `Error thrown while migrating an object from version ${from} to ${to}`);
+		super(
+			'MigrationError',
+			`Error thrown while migrating an object from version ${describeVersion(from)} to ${describeVersion(to)}`,
+		);
 	}
 }
 
@@ -52,6 +55,13 @@ export class NoMigrationStepsError extends MigratorError {
 		 */
 		public readonly to: Version,
 	) {
-		super('NoMigrationStepsError', `No migration steps from version ${from} to ${to}`);
+		super(
+			'NoMigrationStepsError',
+			`No migration steps from version ${describeVersion(from)} to ${describeVersion(to)}`,
+		);
 	}
+}
+
+export function describeVersion(v: Version): string {
+	return typeof v === 'function' && v.name !== '' ? v.name : String(v);
 }
