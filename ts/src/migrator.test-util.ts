@@ -3,28 +3,28 @@ import { type Class } from './util.js';
 
 // Classes
 
-export abstract class TestClass {
+export abstract class TestClass<V extends number> {
 	sequence: number[];
 
-	constructor(readonly version: number) {
+	constructor(readonly version: V) {
 		this.sequence = [version];
 	}
 }
 
 // prettier-ignore
-export class TestClass1 extends TestClass { constructor() { super(1); } }
+export class TestClass1 extends TestClass<1> { constructor() { super(1); } }
 
 // prettier-ignore
-export class TestClass2 extends TestClass { constructor() { super(2); } }
+export class TestClass2 extends TestClass<2> { constructor() { super(2); } }
 
 // prettier-ignore
-export class TestClass3 extends TestClass { constructor() { super(3); } }
+export class TestClass3 extends TestClass<3> { constructor() { super(3); } }
 
 // prettier-ignore
-export class TestClass4 extends TestClass { constructor() { super(4); } }
+export class TestClass4 extends TestClass<4> { constructor() { super(4); } }
 
 // prettier-ignore
-export class TestClass5 extends TestClass { constructor() { super(5); } }
+export class TestClass5 extends TestClass<5> { constructor() { super(5); } }
 
 // Plain objects
 
@@ -47,7 +47,7 @@ export function makeTestMigrator(): Migrator {
 
 	// Classes
 
-	function registerTestClass<TFrom extends TestClass, TTo extends TestClass>(
+	function registerTestClass<TFrom extends TestClass<number>, TTo extends TestClass<number>>(
 		fromClass: Class<TFrom>,
 		toClass: Class<TTo>,
 	): void {
