@@ -1,7 +1,8 @@
 import { test, suite, type TestContext } from 'node:test';
-import { type Migrated, Migrator } from './migrator.js';
+import { type AsyncMigration, type Migrated, Migrator, type SyncMigration } from './migrator.js';
 import { MigrationError, NoMigrationStepsError } from './errors.js';
 import { noopAsync, TestError, type Mocked } from './test-util.js';
+import { type Class } from './util.js';
 import {
 	makeTestObj,
 	makeSyncOnlyTestMigrator,
@@ -9,9 +10,11 @@ import {
 	type SyncOnlyMigrator,
 	type AsyncOnlyMigrator,
 	type TestObj,
+	type TestClass,
 	TestClass1,
 	TestClass2,
 	TestClass3,
+	TestClass4,
 	TestClass5,
 } from './migrator.test-util.js';
 
@@ -533,6 +536,77 @@ suite('Migrator', () => {
 					t.assert.strictEqual(m.computeSteps.mock.callCount(), 0);
 				});
 			});
+		});
+	});
+
+	suite('Asynchronously migrates between versions with mixed sync & async migrations', () => {
+		const m = new Migrator();
+
+		function makeSyncMigration(
+			fromClass: Class<TestClass<number>>,
+			toClass: Class<TestClass<number>>,
+		): SyncMigration<TestClass<number>, TestClass<number>> {
+			return (o) => {
+				const c = new toClass();
+				c.sequence = [...o.sequence, c.version];
+				return c;
+			};
+		}
+
+		function makeAsyncMigration(
+			fromClass: Class<TestClass<number>>,
+			toClass: Class<TestClass<number>>,
+		): AsyncMigration<TestClass<number>, TestClass<number>> {
+			return async (o) => {
+				await noopAsync();
+				const c = new toClass();
+				c.sequence = [...o.sequence, c.version];
+				return c;
+			};
+		}
+
+		m.register(
+			TestClass1,
+			TestClass2,
+			makeSyncMigration(TestClass1, TestClass2),
+			makeAsyncMigration(TestClass2, TestClass1),
+		);
+
+		m.register(
+			TestClass2,
+			TestClass3,
+			makeAsyncMigration(TestClass2, TestClass3),
+			makeSyncMigration(TestClass3, TestClass2),
+		);
+
+		m.register(
+			TestClass3,
+			TestClass4,
+			makeSyncMigration(TestClass3, TestClass4),
+			makeAsyncMigration(TestClass4, TestClass3),
+		);
+
+		m.register(
+			TestClass4,
+			TestClass5,
+			makeAsyncMigration(TestClass4, TestClass5),
+			makeSyncMigration(TestClass5, TestClass4),
+		);
+
+		test('Forward', async (t: TestContext) => {
+			const res = await m.forwardAsync(new TestClass1(), TestClass5);
+
+			t.assert.strictEqual(res.changed, true);
+			t.assert.ok(res.value instanceof TestClass5);
+			t.assert.deepStrictEqual(res.value.sequence, [1, 2, 3, 4, 5]);
+		});
+
+		test('Backward', async (t: TestContext) => {
+			const res = await m.backwardAsync(new TestClass5(), TestClass1);
+
+			t.assert.strictEqual(res.changed, true);
+			t.assert.ok(res.value instanceof TestClass1);
+			t.assert.deepStrictEqual(res.value.sequence, [5, 4, 3, 2, 1]);
 		});
 	});
 });
