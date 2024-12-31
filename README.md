@@ -35,6 +35,10 @@ m.register<V2, V3>(2, 3, (v2) => ({ v: 3 }));
 m.register(V1, V2, (v1) => new V2());
 m.register(V2, V3, (v2) => new V3());
 
+// 2.3. Async?
+m.register<V1, V2>(1, 2, async (v1) => await getV2Async(v1));
+m.register(V1, V2, async (v1) => await getV2Async(v1));
+
 // 3. Read & migrate data (always; or just if it's outdated).
 const storeData: V1 | V2 | V3 = store.read();
 
@@ -43,6 +47,10 @@ const migrated = m.forward<V3>(storeData, storeData.version, 3);
 
 // 3.2. Classes?
 const migrated = m.forward(storeData, V3);
+
+// 3.3. Async?
+const migrated = await m.forwardAsync<V3>(storeData, storeData.version, 3);
+const migrated = await m.forwardAsync(storeData, V3);
 
 // 4. Use the migrated data 🎉
 if (migrated.changed) {
@@ -67,7 +75,7 @@ const data: V3 = migrated.value;
 
   - [x] Optional type inference from versions when migrating plain objects?
   - [x] Friendlier way to migrate objects that are instances of classes (not plain objects)
-  - [ ] Async
+  - [x] Async
   - [ ] ESM package
   - [ ] UMD package
 

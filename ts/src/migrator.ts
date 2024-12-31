@@ -3,7 +3,9 @@ import { type Class } from './util.js';
 
 export type Version = string | number | symbol | Function;
 
-export type Migration<TFrom, TTo> = (fromObject: TFrom) => TTo;
+export type SyncMigration<TFrom, TTo> = (fromObject: TFrom) => TTo;
+export type AsyncMigration<TFrom, TTo> = (fromObject: TFrom) => Promise<TTo>;
+export type Migration<TFrom, TTo> = SyncMigration<TFrom, TTo> | AsyncMigration<TFrom, TTo>;
 
 export interface Step {
 	readonly to: Version;
@@ -102,6 +104,17 @@ export class Migrator<TVersions = unknown> {
 		toVersion: TTo,
 	): Migrated<TVersions[TTo]>;
 
+	/**
+	 * Migrates an object forward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
 	forward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	forward<TTo>(
@@ -116,6 +129,63 @@ export class Migrator<TVersions = unknown> {
 			const fromClass = obj.constructor;
 			const toClass = fromVersionOrToClass;
 			return this.migrate<TTo>(obj, fromClass, toClass, this.forwardStep);
+		}
+	}
+
+	/**
+	 * Migrates an object that is an instance of a class (i.e., not a plain object) forward, to an
+	 * instance of another class.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param toClass The class to which the object is migrated.
+	 */
+	forwardAsync<TTo>(obj: object, toClass: Class<TTo>): Promise<Migrated<TTo>>;
+
+	/**
+	 * Migrates an object forward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
+	forwardAsync<TTo extends keyof TVersions>(
+		obj: object,
+		fromVersion: Version,
+		toVersion: TTo,
+	): Promise<Migrated<TVersions[TTo]>>;
+
+	/**
+	 * Migrates an object forward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
+	forwardAsync<TTo>(obj: object, fromVersion: Version, toVersion: Version): Promise<Migrated<TTo>>;
+
+	async forwardAsync<TTo>(
+		obj: object,
+		fromVersionOrToClass: Version | Class<TTo>,
+		toVersion?: Version,
+	): Promise<Migrated<TTo>> {
+		if (toVersion !== undefined) {
+			const fromVersion = fromVersionOrToClass;
+			return await this.migrateAsync<TTo>(obj, fromVersion, toVersion, this.forwardStep);
+		} else {
+			const fromClass = obj.constructor;
+			const toClass = fromVersionOrToClass;
+			return await this.migrateAsync<TTo>(obj, fromClass, toClass, this.forwardStep);
 		}
 	}
 
@@ -148,16 +218,86 @@ export class Migrator<TVersions = unknown> {
 		toVersion: TTo,
 	): Migrated<TVersions[TTo]>;
 
+	/**
+	 * Migrates an object backward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
 	backward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	backward<TTo>(obj: object, fromVersionOrToClass: Version, toVersion?: Version): Migrated<TTo> {
+		const versions = this.resolveOverloadVersions(obj, fromVersionOrToClass, toVersion);
+		return this.migrate<TTo>(obj, versions.from, versions.to, this.backwardStep);
+	}
+
+	/**
+	 * Migrates an object that is an instance of a class (i.e., not a plain object) backward, to an
+	 * instance of another class.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param toClass The class to which the object is migrated.
+	 */
+	backwardAsync<TTo>(obj: object, toClass: Class<TTo>): Promise<Migrated<TTo>>;
+
+	/**
+	 * Migrates an object backward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
+	backwardAsync<TTo extends keyof TVersions>(
+		obj: object,
+		fromVersion: Version,
+		toVersion: TTo,
+	): Promise<Migrated<TVersions[TTo]>>;
+
+	/**
+	 * Migrates an object backward between two versions. Immediately returns a result with the same
+	 * object, if the two versions are the same.
+	 *
+	 * @remarks
+	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
+	 *
+	 * @param obj The object to migrate.
+	 * @param fromVersion The version of the object.
+	 * @param toVersion The version to which the object is migrated.
+	 */
+	backwardAsync<TTo>(obj: object, fromVersion: Version, toVersion: Version): Promise<Migrated<TTo>>;
+
+	async backwardAsync<TTo>(
+		obj: object,
+		fromVersionOrToClass: Version,
+		toVersion?: Version,
+	): Promise<Migrated<TTo>> {
+		const versions = this.resolveOverloadVersions(obj, fromVersionOrToClass, toVersion);
+		return await this.migrateAsync<TTo>(obj, versions.from, versions.to, this.backwardStep);
+	}
+
+	resolveOverloadVersions(
+		obj: object,
+		fromVersionOrToClass: Version,
+		toVersion?: Version,
+	): { from: Version; to: Version } {
 		if (toVersion !== undefined) {
-			const fromVersion = fromVersionOrToClass;
-			return this.migrate<TTo>(obj, fromVersion, toVersion, this.backwardStep);
+			// 3 args: (plainObject, v1, v2)
+			return { from: fromVersionOrToClass, to: toVersion };
 		} else {
-			const fromClass = obj.constructor;
-			const toClass = fromVersionOrToClass;
-			return this.migrate<TTo>(obj, fromClass, toClass, this.backwardStep);
+			// 2 args: (new V1(), V2)
+			return { from: obj.constructor, to: fromVersionOrToClass };
 		}
 	}
 
@@ -183,19 +323,66 @@ export class Migrator<TVersions = unknown> {
 		}
 
 		// Migrate.
-		let migratedObj = obj;
-		for (const step of steps) {
-			try {
-				migratedObj = step.migration(migratedObj);
-			} catch (e: unknown) {
-				throw new MigrationError(from, to, e);
-			}
-		}
+		const migratedObj = this.runSteps(obj, from, to, steps);
 
 		return {
 			value: migratedObj as TTo,
 			changed: true,
 		};
+	}
+
+	async migrateAsync<TTo>(
+		obj: unknown,
+		from: Version,
+		to: Version,
+		nextStep: Map<Version, Step>,
+	): Promise<Migrated<TTo>> {
+		// Same versions? Return immediately.
+		if (from === to) {
+			return {
+				value: obj as TTo,
+				changed: false,
+			};
+		}
+
+		// Get steps.
+		let steps = this.tryGetCachedSteps(from, to);
+		if (steps === undefined) {
+			steps = this.computeSteps(from, to, nextStep);
+			this.cacheSteps(from, to, steps);
+		}
+
+		// Migrate.
+		const migratedObj = await this.runStepsAsync(obj, from, to, steps);
+
+		return {
+			value: migratedObj as TTo,
+			changed: true,
+		};
+	}
+
+	runSteps(obj: unknown, from: Version, to: Version, steps: Step[]): unknown {
+		for (const step of steps) {
+			try {
+				const migrate = step.migration as SyncMigration<unknown, unknown>;
+				obj = migrate(obj);
+			} catch (e: unknown) {
+				throw new MigrationError(from, to, e);
+			}
+		}
+		return obj;
+	}
+
+	async runStepsAsync(obj: unknown, from: Version, to: Version, steps: Step[]): Promise<unknown> {
+		for (const step of steps) {
+			try {
+				const migrateAsync = step.migration as AsyncMigration<unknown, unknown>;
+				obj = await Promise.resolve(migrateAsync(obj));
+			} catch (e: unknown) {
+				throw new MigrationError(from, to, e);
+			}
+		}
+		return obj;
 	}
 
 	/**
