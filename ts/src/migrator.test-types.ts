@@ -25,9 +25,15 @@ import { expectTypeOf } from 'expect-type';
 
 	// Test: Return type inferred when migrating forward.
 	expectTypeOf(m.forward(new TestClass1(), TestClass5)).toEqualTypeOf<Migrated<TestClass5>>();
+	expectTypeOf(m.forwardAsync(new TestClass1(), TestClass5)).toEqualTypeOf<
+		Promise<Migrated<TestClass5>>
+	>();
 
 	// Test: Return type inferred when migrating backward.
 	expectTypeOf(m.backward(new TestClass5(), TestClass1)).toEqualTypeOf<Migrated<TestClass1>>();
+	expectTypeOf(m.backwardAsync(new TestClass5(), TestClass1)).toEqualTypeOf<
+		Promise<Migrated<TestClass1>>
+	>();
 }
 
 // Predefined versions
@@ -42,7 +48,9 @@ import { expectTypeOf } from 'expect-type';
 
 	// Test: Return type inferred when migrating forward.
 	expectTypeOf(m.forward(o1, 1, 5)).toEqualTypeOf<Migrated<TestObj<5>>>();
+	expectTypeOf(m.forwardAsync(o1, 1, 5)).toEqualTypeOf<Promise<Migrated<TestObj<5>>>>();
 
 	// Test: Return type inferred when migrating backward.
 	expectTypeOf(m.backward(o5, 5, 1)).toEqualTypeOf<Migrated<TestObj<1>>>();
+	expectTypeOf(m.backwardAsync(o5, 5, 1)).toEqualTypeOf<Promise<Migrated<TestObj<1>>>>();
 }

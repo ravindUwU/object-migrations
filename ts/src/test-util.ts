@@ -30,3 +30,12 @@ export class TestError extends Error {
 		this.name = 'TestError';
 	}
 }
+
+/**
+ * A promise that does nothing.
+ */
+export function noopAsync(): Promise<void> {
+	return new Promise((resolve) => {
+		resolve();
+	});
+}
