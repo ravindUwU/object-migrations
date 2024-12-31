@@ -1,7 +1,7 @@
 {
 	"type": "module",
 	"scripts": {
-		"test": "tsx --test",
+		"test": "tsx --test **/*.test.ts",
 		"check": "npm-run-all check:* --continue-on-error --print-label",
 		"check:ts": "tsc --noEmit --pretty",
 		"check:lint": "eslint --color ."
