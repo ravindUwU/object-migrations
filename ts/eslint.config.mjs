@@ -1,3 +1,5 @@
+import path from 'node:path';
+import { includeIgnoreFile } from '@eslint/compat';
 import jsEslint from '@eslint/js';
 import jsdocEslint from 'eslint-plugin-jsdoc';
 import tsEslint from 'typescript-eslint';
@@ -8,6 +10,8 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 
 /** @type {Config[]} */
 export default [
+	includeIgnoreFile(path.resolve(import.meta.dirname, '..', '.gitignore')),
+
 	// JavaScript
 	// https://eslint.org/docs/latest/use/configure/configuration-files
 	...scope(
