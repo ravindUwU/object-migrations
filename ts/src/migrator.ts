@@ -23,35 +23,95 @@ export interface Migrated<TTo> {
 
 	/**
 	 * Whether the object changed during the migration. `false` if the object was already at the
-	 * version that it was attempted to be migrated to.
+	 * version that it was attempted to be migrated to, in which case {@linkcode value} is the
+	 * initial (unchanged) object.
 	 */
 	readonly changed: boolean;
 }
 
+/**
+ * Allows registering migrations between object versions and then migrating objects forward and
+ * backward accordingly.
+ *
+ * @remarks
+ *
+ * - First register migrations with {@linkcode register}. Then, migrate objects forward
+ *   with {@linkcode forward}/{@linkcode forwardAsync} and backward with
+ *   {@linkcode backward}/{@linkcode backwardAsync}.
+ *
+ *   ```typescript
+ *   const m = new Migrator();
+ *
+ *   m.register(1, 2, ...);
+ *   m.register(2, 3, ...);
+ *
+ *   const v2 = m.forward<V2>(v1Object, 1, 2);
+ *   ```
+ *
+ * - A record of version-type mappings can be optionally specified, so that subsequent
+ *   {@linkcode register}, {@linkcode forward}, {@linkcode forwardAsync}, {@linkcode backward}, and
+ *   {@linkcode backwardAsync} calls are typed accordingly.
+ *
+ *   ```typescript
+ *   const m = new Migrator<{
+ *       1: V1,
+ *       2: V2,
+ *   }>();
+ *
+ *   m.register(1, 2, ...);
+ *
+ *   const v2: V2 = m.forward(v1Object, 1, 2);
+ *   ```
+ */
 export class Migrator<TVersions = unknown> {
 	readonly forwardStep = new Map<Version, Step>();
 	readonly backwardStep = new Map<Version, Step>();
 
 	/**
-	 * Registers the forward and (optionally) backward migrations between two successive versions.
+	 * Registers the forward and optional backward migrations between two successive versions.
+	 *
+	 * @remarks
+	 *
+	 * - Versions are strings, numbers or symbols.
+	 *
+	 *   ```typescript
+	 *   register<V1, V2>(1, 2, (v1) => makeV2(), (v2) => makeV1());
+	 *   ```
+	 *
+	 * - If the objects are instances of classes, the class (type) itself can be used as the version,
+	 *   and the parameter & return types of the migrations will be inferred accordingly.
+	 *
+	 *   ```typescript
+	 *   register(V1, V2, (v1) => new V2(...), (v2) => new V1(...));
+	 *   ```
+	 *
+	 * - Migrations can be synchronous or asynchronous. {@linkcode forward} & {@linkcode backward}
+	 *   work only with synchronous migrations. {@linkcode forwardAsync} & {@linkcode backwardAsync}
+	 *   work with both.
+	 *
+	 *   ```typescript
+	 *   register(V1, V2, (v1) => getV2(), (v2) => getV1());
+	 *   register(V1, V2, async (v1) => await getV2Async(), async (v2) => await getV1Async());
+	 *   ```
 	 */
+
 	register<TFrom, TTo>(
-		from: Class<TFrom>,
-		to: Class<TTo>,
+		fromClass: Class<TFrom>,
+		toClass: Class<TTo>,
 		forward: Migration<TFrom, TTo>,
 		backward?: Migration<TTo, TFrom>,
 	): void;
 
 	register<TFrom extends keyof TVersions, TTo extends keyof TVersions>(
-		from: TFrom,
-		to: TTo,
+		fromVersion: TFrom,
+		toVersion: TTo,
 		forward: Migration<TVersions[TFrom], TVersions[TTo]>,
 		backward?: Migration<TVersions[TTo], TVersions[TFrom]>,
 	): void;
 
 	register<TFrom, TTo>(
-		from: Version,
-		to: Version,
+		fromVersion: Version,
+		toVersion: Version,
 		forward: Migration<TFrom, TTo>,
 		backward?: Migration<TTo, TFrom>,
 	): void;
@@ -76,45 +136,46 @@ export class Migrator<TVersions = unknown> {
 	}
 
 	/**
-	 * Migrates an object that is an instance of a class (i.e., not a plain object) forward, to an
-	 * instance of another class.
+	 * Migrates an object forward between two versions.
 	 *
 	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 *
-	 * @param obj The object to migrate.
-	 * @param toClass The class to which the object is migrated.
+	 * - Use the 3-parameter overload to specify the object and the versions it is being migrated in
+	 *   between.
+	 *
+	 *   ```typescript
+	 *   const v2 = forward<V2>(v1Object, 1, 2);
+	 *   ```
+	 *
+	 * - If version-type mappings are specified, the return type will be inferred accordingly.
+	 *
+	 *   ```typescript
+	 *   const v2 = forward(v1Object, 1, 2);
+	 *   ```
+	 *
+	 * - If the objects are instances of classes and their classes were {@link register registered}
+	 *   as their versions, use the 2-parameter overload.
+	 *
+	 *   ```typescript
+	 *   const v2 = forward(v1Object, V2);
+	 *   ```
+	 *
+	 * - Immediately returns a result with the same object, if it is already at the version it is
+	 *   being migrated to.
+	 *
+	 * - To run asynchronously, use {@link forwardAsync} instead.
+	 *
+	 * - Throws {@linkcode NoMigrationStepsError}, {@linkcode MigrationError}.
 	 */
+
 	forward<TTo>(obj: object, toClass: Class<TTo>): Migrated<TTo>;
 
-	/**
-	 * Migrates an object forward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	forward<TTo extends keyof TVersions>(
 		obj: object,
 		fromVersion: Version,
 		toVersion: TTo,
 	): Migrated<TVersions[TTo]>;
 
-	/**
-	 * Migrates an object forward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	forward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	forward<TTo>(
@@ -133,45 +194,18 @@ export class Migrator<TVersions = unknown> {
 	}
 
 	/**
-	 * Migrates an object that is an instance of a class (i.e., not a plain object) forward, to an
-	 * instance of another class.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param toClass The class to which the object is migrated.
+	 * Asynchronously migrates an object forward between two versions. Like {@linkcode forward}, but
+	 * supports both synchronous and asynchronous migrations.
 	 */
+
 	forwardAsync<TTo>(obj: object, toClass: Class<TTo>): Promise<Migrated<TTo>>;
 
-	/**
-	 * Migrates an object forward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	forwardAsync<TTo extends keyof TVersions>(
 		obj: object,
 		fromVersion: Version,
 		toVersion: TTo,
 	): Promise<Migrated<TVersions[TTo]>>;
 
-	/**
-	 * Migrates an object forward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	forwardAsync<TTo>(obj: object, fromVersion: Version, toVersion: Version): Promise<Migrated<TTo>>;
 
 	async forwardAsync<TTo>(
@@ -190,45 +224,46 @@ export class Migrator<TVersions = unknown> {
 	}
 
 	/**
-	 * Migrates an object that is an instance of a class (i.e., not a plain object) backward, to an
-	 * instance of another class.
+	 * Migrates an object backward between two versions.
 	 *
 	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
 	 *
-	 * @param obj The object to migrate.
-	 * @param toClass The class to which the object is migrated.
+	 * - Use the 3-parameter overload to specify the object and the versions it is being migrated in
+	 *   between.
+	 *
+	 *   ```typescript
+	 *   const v2 = backward<V2>(v1Object, 1, 2);
+	 *   ```
+	 *
+	 * - If version-type mappings are specified, the return type will be inferred accordingly.
+	 *
+	 *   ```typescript
+	 *   const v2 = backward(v1Object, 1, 2);
+	 *   ```
+	 *
+	 * - If the objects are instances of classes and their classes were {@link register registered}
+	 *   as their versions, use the 2-parameter overload.
+	 *
+	 *   ```typescript
+	 *   const v2 = backward(v1Object, V2);
+	 *   ```
+	 *
+	 * - Immediately returns a result with the same object, if it is already at the version it is
+	 *   being migrated to.
+	 *
+	 * - To run asynchronously, use {@link backwardAsync} instead.
+	 *
+	 * - Throws {@linkcode NoMigrationStepsError}, {@linkcode MigrationError}.
 	 */
+
 	backward<TTo>(obj: object, toClass: Class<TTo>): Migrated<TTo>;
 
-	/**
-	 * Migrates an object backward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	backward<TTo extends keyof TVersions>(
 		obj: object,
 		fromVersion: Version,
 		toVersion: TTo,
 	): Migrated<TVersions[TTo]>;
 
-	/**
-	 * Migrates an object backward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	backward<TTo>(obj: object, fromVersion: Version, toVersion: Version): Migrated<TTo>;
 
 	backward<TTo>(obj: object, fromVersionOrToClass: Version, toVersion?: Version): Migrated<TTo> {
@@ -237,45 +272,18 @@ export class Migrator<TVersions = unknown> {
 	}
 
 	/**
-	 * Migrates an object that is an instance of a class (i.e., not a plain object) backward, to an
-	 * instance of another class.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param toClass The class to which the object is migrated.
+	 * Asynchronously migrates an object backward between two versions. Like {@linkcode backward},
+	 * but supports both synchronous and asynchronous migrations.
 	 */
+
 	backwardAsync<TTo>(obj: object, toClass: Class<TTo>): Promise<Migrated<TTo>>;
 
-	/**
-	 * Migrates an object backward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	backwardAsync<TTo extends keyof TVersions>(
 		obj: object,
 		fromVersion: Version,
 		toVersion: TTo,
 	): Promise<Migrated<TVersions[TTo]>>;
 
-	/**
-	 * Migrates an object backward between two versions. Immediately returns a result with the same
-	 * object, if the two versions are the same.
-	 *
-	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}, {@link MigrationError}.
-	 *
-	 * @param obj The object to migrate.
-	 * @param fromVersion The version of the object.
-	 * @param toVersion The version to which the object is migrated.
-	 */
 	backwardAsync<TTo>(obj: object, fromVersion: Version, toVersion: Version): Promise<Migrated<TTo>>;
 
 	async backwardAsync<TTo>(
@@ -323,7 +331,15 @@ export class Migrator<TVersions = unknown> {
 		}
 
 		// Migrate.
-		const migratedObj = this.runSteps(obj, from, to, steps);
+		let migratedObj = obj;
+		for (const step of steps) {
+			try {
+				const migrate = step.migration as SyncMigration<unknown, unknown>;
+				migratedObj = migrate(migratedObj);
+			} catch (e: unknown) {
+				throw new MigrationError(from, to, e);
+			}
+		}
 
 		return {
 			value: migratedObj as TTo,
@@ -353,7 +369,15 @@ export class Migrator<TVersions = unknown> {
 		}
 
 		// Migrate.
-		const migratedObj = await this.runStepsAsync(obj, from, to, steps);
+		let migratedObj = obj;
+		for (const step of steps) {
+			try {
+				const migrateAsync = step.migration as AsyncMigration<unknown, unknown>;
+				migratedObj = await Promise.resolve(migrateAsync(migratedObj));
+			} catch (e: unknown) {
+				throw new MigrationError(from, to, e);
+			}
+		}
 
 		return {
 			value: migratedObj as TTo,
@@ -361,36 +385,12 @@ export class Migrator<TVersions = unknown> {
 		};
 	}
 
-	runSteps(obj: unknown, from: Version, to: Version, steps: Step[]): unknown {
-		for (const step of steps) {
-			try {
-				const migrate = step.migration as SyncMigration<unknown, unknown>;
-				obj = migrate(obj);
-			} catch (e: unknown) {
-				throw new MigrationError(from, to, e);
-			}
-		}
-		return obj;
-	}
-
-	async runStepsAsync(obj: unknown, from: Version, to: Version, steps: Step[]): Promise<unknown> {
-		for (const step of steps) {
-			try {
-				const migrateAsync = step.migration as AsyncMigration<unknown, unknown>;
-				obj = await Promise.resolve(migrateAsync(obj));
-			} catch (e: unknown) {
-				throw new MigrationError(from, to, e);
-			}
-		}
-		return obj;
-	}
-
 	/**
-	 * Computes steps to migrate an object from between two versions. Iterate the steps and apply
-	 * their migrations in order to migrate the object.
+	 * Computes steps to migrate an object from between two versions.
 	 *
 	 * @remarks
-	 * Throws: {@link NoMigrationStepsError}.
+	 * - Iterate the steps in order and apply their migrations to migrate the object.
+	 * - Throws {@linkcode NoMigrationStepsError}.
 	 */
 	computeSteps(from: Version, to: Version, nextStep: Map<Version, Step>): Step[] {
 		const steps: Step[] = [];
@@ -424,8 +424,8 @@ export class Migrator<TVersions = unknown> {
 	readonly cache = new Map</* from */ Version, Map</* to */ Version, Step[]>>();
 
 	/**
-	 * Gets the steps previously cached via {@link cacheSteps}, to migrate an object between two
-	 * versions, or `undefined` if no steps have been cached yet.
+	 * Gets the previously cached steps to migrate an object between two versions, or `undefined`
+	 * if no steps have been cached yet.
 	 */
 	tryGetCachedSteps(from: Version, to: Version): Step[] | undefined {
 		return this.cache.get(from)?.get(to);

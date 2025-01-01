@@ -22,7 +22,7 @@ export type Mocked<T, F extends FunctionNames<T>> = Omit<T, F> & {
 };
 
 /**
- * Generic error with an arbitrary "payload", for testing.
+ * Generic error with an arbitrary payload, for testing.
  */
 export class TestError extends Error {
 	constructor(public readonly payload?: unknown) {
@@ -32,7 +32,7 @@ export class TestError extends Error {
 }
 
 /**
- * A promise that does nothing.
+ * Returns a promise that resolves immediately, doing nothing.
  */
 export function noopAsync(): Promise<void> {
 	return new Promise((resolve) => {
