@@ -10,7 +10,7 @@ export default {
 	proseWrap: 'always',
 	overrides: [
 		{
-			files: ['.vscode/*.json', 'tsconfig.json'],
+			files: ['.vscode/*.json', 'tsconfig.json', 'tsconfig.*.json'],
 			options: {
 				parser: 'json5',
 				trailingComma: 'all',

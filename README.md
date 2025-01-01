@@ -76,8 +76,9 @@ const data: V3 = migrated.value;
   - [x] Optional type inference from versions when migrating plain objects?
   - [x] Friendlier way to migrate objects that are instances of classes (not plain objects)
   - [x] Async
-  - [ ] ESM package
-  - [ ] UMD package
+  - [x] ESM package
+  - [x] CJS package
+  - [ ] UMD Bundle
 
 - Additional implementations?
 

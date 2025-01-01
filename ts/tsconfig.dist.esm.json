@@ -1,0 +1,9 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"outDir": "./dist/esm",
+		"declaration": true,
+		"stripInternal": true,
+	},
+	"include": ["./src/index.ts"],
+}

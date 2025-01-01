@@ -7,6 +7,7 @@ export type SyncMigration<TFrom, TTo> = (fromObject: TFrom) => TTo;
 export type AsyncMigration<TFrom, TTo> = (fromObject: TFrom) => Promise<TTo>;
 export type Migration<TFrom, TTo> = SyncMigration<TFrom, TTo> | AsyncMigration<TFrom, TTo>;
 
+/** @internal */
 export interface Step {
 	readonly to: Version;
 	readonly migration: Migration<unknown, unknown>;
@@ -64,7 +65,10 @@ export interface Migrated<TTo> {
  *   ```
  */
 export class Migrator<TVersions = unknown> {
+	/** @internal */
 	readonly forwardStep = new Map<Version, Step>();
+
+	/** @internal */
 	readonly backwardStep = new Map<Version, Step>();
 
 	/**
@@ -295,6 +299,7 @@ export class Migrator<TVersions = unknown> {
 		return await this.migrateAsync<TTo>(obj, versions.from, versions.to, this.backwardStep);
 	}
 
+	/** @internal */
 	resolveOverloadVersions(
 		obj: object,
 		fromVersionOrToClass: Version,
@@ -309,6 +314,7 @@ export class Migrator<TVersions = unknown> {
 		}
 	}
 
+	/** @internal */
 	migrate<TTo>(
 		obj: unknown,
 		from: Version,
@@ -347,6 +353,7 @@ export class Migrator<TVersions = unknown> {
 		};
 	}
 
+	/** @internal */
 	async migrateAsync<TTo>(
 		obj: unknown,
 		from: Version,
@@ -391,6 +398,8 @@ export class Migrator<TVersions = unknown> {
 	 * @remarks
 	 * - Iterate the steps in order and apply their migrations to migrate the object.
 	 * - Throws {@linkcode NoMigrationStepsError}.
+	 *
+	 * @internal
 	 */
 	computeSteps(from: Version, to: Version, nextStep: Map<Version, Step>): Step[] {
 		const steps: Step[] = [];
@@ -421,11 +430,14 @@ export class Migrator<TVersions = unknown> {
 		return steps;
 	}
 
+	/** @internal */
 	readonly cache = new Map</* from */ Version, Map</* to */ Version, Step[]>>();
 
 	/**
 	 * Gets the previously cached steps to migrate an object between two versions, or `undefined`
 	 * if no steps have been cached yet.
+	 *
+	 * @internal
 	 */
 	tryGetCachedSteps(from: Version, to: Version): Step[] | undefined {
 		return this.cache.get(from)?.get(to);
@@ -433,6 +445,8 @@ export class Migrator<TVersions = unknown> {
 
 	/**
 	 * Caches steps to migrate an object between two versions.
+	 *
+	 * @internal
 	 */
 	cacheSteps(from: Version, to: Version, steps: Step[]): void {
 		if (steps.length === 0) {

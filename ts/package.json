@@ -3,8 +3,14 @@
 	"scripts": {
 		"test": "tsx --test **/*.test.ts",
 		"check": "npm-run-all check:* --continue-on-error --print-label",
-		"check:ts": "tsc --noEmit --pretty",
-		"check:lint": "eslint --color ."
+		"check-all": "npm-run-all check:** --continue-on-error --print-label",
+		"check:ts": "tsc -p tsconfig.json --noEmit --pretty",
+		"check:ts:dist:esm": "tsc -p tsconfig.dist.esm.json --noEmit --pretty",
+		"check:ts:dist:cjs": "tsc -p tsconfig.dist.cjs.json --noEmit --pretty",
+		"check:lint": "eslint --color .",
+		"build": "npm-run-all build:* --print-label",
+		"build:esm": "tsc -p tsconfig.dist.esm.json",
+		"build:cjs": "tsc -p tsconfig.dist.cjs.json"
 	},
 	"devDependencies": {
 		"@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",

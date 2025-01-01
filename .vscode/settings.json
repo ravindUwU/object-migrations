@@ -5,6 +5,7 @@
 	"files.readonlyInclude": {
 		"**/node_modules/**": true,
 		"**/pnpm-lock.yaml": true,
+		"ts/dist/**": true,
 	},
 
 	"editor.rulers": [100],
