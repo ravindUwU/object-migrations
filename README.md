@@ -1,13 +1,6 @@
-# Object Migrations
+<img src="./assets/logo.svg" height="80" align="right">
 
-> [!NOTE]
->
-> **Still a work in progress!!** The examples below will likely change as I [complete](#to-do) this
-> project and finalise its APIs.
->
-> I've written similar logic several times across several projects after unsuccessful attempts at
-> finding libraries/a standardised way to do this <sup><sup>is my Google-fu not good enough?
-> 😭</sup></sup>, so I thought I'd make a smol library out of it :3
+# Object Migrations
 
 Linear, in-memory migrations for versioned objects.
 
