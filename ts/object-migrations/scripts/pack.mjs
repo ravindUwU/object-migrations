@@ -43,13 +43,6 @@ fs.mkdirSync($path('pack', 'cwd'), { recursive: true });
 // pack/cwd/dist/**
 fs.cpSync($path('dist'), $path('pack', 'cwd', 'dist'), { recursive: true });
 
-// pack/cwd/assets/**
-fs.mkdirSync($path('pack', 'cwd', 'assets'));
-fs.copyFileSync(
-	$path('..', '..', 'assets', 'logo.png'),
-	$path('pack', 'cwd', 'assets', 'logo.png'),
-);
-
 // pack/cwd/package.json
 const packageJson = JSON.parse(fs.readFileSync($path('package.json'), { encoding: 'utf8' }));
 delete packageJson.scripts;
@@ -77,6 +70,7 @@ const packOutputJson = childProcess.execSync('pnpm pack --json --pack-destinatio
 	encoding: 'utf8',
 });
 const packOutput = JSON.parse(packOutputJson);
+console.log(packOutputJson);
 
 // pack/filename
 fs.writeFileSync($path('pack', 'filename'), path.basename(packOutput.filename));

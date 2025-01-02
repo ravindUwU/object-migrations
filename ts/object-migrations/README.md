@@ -1,4 +1,4 @@
-<img src="../../assets/logo.svg" pack-src="./assets/logo.png" height="90" align="right">
+<img src="../../assets/logo.svg" height="90" align="right">
 
 # Object Migrations
 

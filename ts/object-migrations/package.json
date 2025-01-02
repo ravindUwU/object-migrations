@@ -1,6 +1,6 @@
 {
 	"name": "object-migrations",
-	"version": "1.0.0-rc.2",
+	"version": "1.0.0-rc.3",
 	"description": "Linear, in-memory migrations for versioned objects",
 	"license": "MIT",
 	"keywords": [
@@ -19,7 +19,7 @@
 	"bugs": "https://github.com/ravindUwU/object-migrations/issues",
 	"repository": {
 		"type": "git",
-		"url": "git+https://https://github.com/ravindUwU/object-migrations.git",
+		"url": "git+https://github.com/ravindUwU/object-migrations.git",
 		"directory": "ts/object-migrations"
 	},
 	"module": "./dist/esm/index.js",
