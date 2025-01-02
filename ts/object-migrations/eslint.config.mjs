@@ -10,7 +10,7 @@ import comments from '@eslint-community/eslint-plugin-eslint-comments/configs';
 
 /** @type {Config[]} */
 export default [
-	includeIgnoreFile(path.resolve(import.meta.dirname, '..', '.gitignore')),
+	includeIgnoreFile(path.resolve(import.meta.dirname, '..', '..', '.gitignore')),
 
 	// JavaScript
 	// https://eslint.org/docs/latest/use/configure/configuration-files
