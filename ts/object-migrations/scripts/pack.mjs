@@ -46,8 +46,8 @@ fs.cpSync($path('dist'), $path('pack', 'cwd', 'dist'), { recursive: true });
 // pack/cwd/assets/**
 fs.mkdirSync($path('pack', 'cwd', 'assets'));
 fs.copyFileSync(
-	$path('..', '..', 'assets', 'logo.svg'),
-	$path('pack', 'cwd', 'assets', 'logo.svg'),
+	$path('..', '..', 'assets', 'logo.png'),
+	$path('pack', 'cwd', 'assets', 'logo.png'),
 );
 
 // pack/cwd/package.json
