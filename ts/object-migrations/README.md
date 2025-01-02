@@ -2,6 +2,8 @@
 
 # Object Migrations
 
+[![NPM](https://img.shields.io/npm/v/object-migrations)](https://www.npmjs.com/package/object-migrations)
+
 ## Usage
 
 1. Make a migrator.
