@@ -1,0 +1,9 @@
+{
+	"name": "object-migrations-import-test",
+	"scripts": {
+		"test": "node ./scripts/ensure-build.mjs && node --test **/*.test.{mjs,cjs}"
+	},
+	"dependencies": {
+		"object-migrations": "workspace:*"
+	}
+}

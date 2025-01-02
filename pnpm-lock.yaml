@@ -66,6 +66,12 @@ importers:
         specifier: ^8.18.2
         version: 8.19.0(eslint@9.17.0)(typescript@5.7.2)
 
+  ts/object-migrations-import-test:
+    dependencies:
+      object-migrations:
+        specifier: workspace:*
+        version: link:../object-migrations
+
 packages:
 
   '@es-joy/jsdoccomment@0.49.0':
