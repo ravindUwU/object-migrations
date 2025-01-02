@@ -1,7 +1,27 @@
 {
 	"name": "object-migrations",
-	"description": "Linear, in-memory migrations for versioned objects",
 	"version": "1.0.0-rc.1",
+	"description": "Linear, in-memory migrations for versioned objects",
+	"license": "MIT",
+	"keywords": [
+		"migration",
+		"object",
+		"local",
+		"version",
+		"data",
+		"model"
+	],
+	"author": {
+		"name": "Ravindu Liyanapathirana",
+		"url": "https://github.com/ravindUwU"
+	},
+	"homepage": "https://github.com/ravindUwU/object-migrations/ts",
+	"bugs": "https://github.com/ravindUwU/object-migrations/issues",
+	"repository": {
+		"type": "git",
+		"url": "git+https://https://github.com/ravindUwU/object-migrations.git",
+		"directory": "ts/object-migrations"
+	},
 	"module": "./dist/esm/index.js",
 	"main": "./dist/cjs/index.js",
 	"exports": {
