@@ -6,6 +6,7 @@
 		"**/node_modules/**": true,
 		"**/pnpm-lock.yaml": true,
 		"ts/*/dist/**": true,
+		"ts/*/pack/**": true,
 	},
 
 	"editor.rulers": [100],
