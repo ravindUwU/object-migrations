@@ -78,7 +78,7 @@ const data: V3 = migrated.value;
   - [x] Async
   - [x] ESM package
   - [x] CJS package
-  - [ ] UMD Bundle
+  - [x] UMD Bundle
 
 - Additional implementations?
 
