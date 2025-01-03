@@ -53,11 +53,7 @@ fs.writeFileSync(
 );
 
 // pack/cwd/README.md
-let readmeMd = fs
-	.readFileSync($path('README.md'), { encoding: 'utf8' })
-	// Replace <img src="..." pack-src="..."> with <img src="..."> with `pack-src` instead of `src`.
-	.replace(/src="[^"]+" pack-(?<packSrc>src="[^"]+")/g, '$<packSrc>');
-fs.writeFileSync($path('pack', 'cwd', 'README.md'), readmeMd);
+fs.copyFileSync($path('README.md'), $path('pack', 'cwd', 'README.md'));
 
 // pack/cwd/LICENSE
 fs.copyFileSync($path('..', '..', 'LICENSE'), $path('pack', 'cwd', 'LICENSE'));
