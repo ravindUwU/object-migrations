@@ -1,6 +1,6 @@
 {
 	"name": "object-migrations",
-	"version": "1.0.0-rc.3",
+	"version": "1.0.0-rc.4",
 	"description": "Linear, in-memory migrations for versioned objects",
 	"license": "MIT",
 	"keywords": [
@@ -22,6 +22,7 @@
 		"url": "git+https://github.com/ravindUwU/object-migrations.git",
 		"directory": "ts/object-migrations"
 	},
+	"type": "module",
 	"module": "./dist/esm/index.js",
 	"main": "./dist/cjs/index.js",
 	"exports": {
@@ -37,9 +38,9 @@
 		"check:ts:dist:cjs": "tsc -p tsconfig.dist.cjs.json --noEmit --pretty",
 		"check:lint": "eslint --color .",
 		"build": "npm-run-all build:* --print-label",
-		"build:esm": "rimraf ./dist/esm && tsc -p tsconfig.dist.esm.json",
-		"build:cjs": "rimraf ./dist/cjs && tsc -p tsconfig.dist.cjs.json",
-		"build:bundle": "rimraf ./dist/bundle && rollup -c",
+		"build:esm": "rimraf ./dist/esm && tsc -p tsconfig.dist.esm.json && node ./scripts/post-build.mjs esm",
+		"build:cjs": "rimraf ./dist/cjs && tsc -p tsconfig.dist.cjs.json && node ./scripts/post-build.mjs cjs",
+		"build:bundle": "rimraf ./dist/bundle && rollup -c && node ./scripts/post-build.mjs bundle",
 		"clean": "rimraf ./dist && rimraf ./pack",
 		"pack": "node ./scripts/pack.mjs"
 	},
