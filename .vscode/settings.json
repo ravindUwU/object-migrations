@@ -9,6 +9,8 @@
 		"ts/*/pack/**": true,
 	},
 
+	"eslint.workingDirectories": ["./ts"],
+
 	"editor.rulers": [100],
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	"editor.formatOnSave": true,

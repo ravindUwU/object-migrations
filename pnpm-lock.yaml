@@ -12,7 +12,7 @@ importers:
         specifier: ^3.4.2
         version: 3.4.2
 
-  ts/object-migrations:
+  ts:
     devDependencies:
       '@eslint-community/eslint-plugin-eslint-comments':
         specifier: ^4.4.1
@@ -23,15 +23,6 @@ importers:
       '@eslint/js':
         specifier: ^9.17.0
         version: 9.17.0
-      '@rollup/plugin-terser':
-        specifier: ^0.4.4
-        version: 0.4.4(rollup@4.29.1)
-      '@rollup/plugin-typescript':
-        specifier: ^12.1.2
-        version: 12.1.2(rollup@4.29.1)(tslib@2.8.1)(typescript@5.7.2)
-      '@types/node':
-        specifier: '22'
-        version: 22.10.3
       eslint:
         specifier: ^9.17.0
         version: 9.17.0
@@ -44,6 +35,21 @@ importers:
       eslint-plugin-prettier:
         specifier: ^5.2.1
         version: 5.2.1(eslint-config-prettier@9.1.0(eslint@9.17.0))(eslint@9.17.0)(prettier@3.4.2)
+      typescript-eslint:
+        specifier: ^8.19.0
+        version: 8.19.0(eslint@9.17.0)(typescript@5.7.2)
+
+  ts/object-migrations:
+    devDependencies:
+      '@rollup/plugin-terser':
+        specifier: ^0.4.4
+        version: 0.4.4(rollup@4.29.1)
+      '@rollup/plugin-typescript':
+        specifier: ^12.1.2
+        version: 12.1.2(rollup@4.29.1)(tslib@2.8.1)(typescript@5.7.2)
+      '@types/node':
+        specifier: '22'
+        version: 22.10.3
       expect-type:
         specifier: ^1.1.0
         version: 1.1.0
@@ -62,9 +68,6 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.7.2
-      typescript-eslint:
-        specifier: ^8.18.2
-        version: 8.19.0(eslint@9.17.0)(typescript@5.7.2)
 
   ts/object-migrations-import-test:
     dependencies:

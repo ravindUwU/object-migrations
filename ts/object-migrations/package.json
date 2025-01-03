@@ -31,12 +31,10 @@
 	},
 	"scripts": {
 		"test": "tsx --test **/*.test.ts",
-		"check": "npm-run-all check:* --continue-on-error --print-label",
-		"check-all": "npm-run-all check:** --continue-on-error --print-label",
+		"check": "npm-run-all check:** --continue-on-error --print-label",
 		"check:ts": "tsc -p tsconfig.json --noEmit --pretty",
 		"check:ts:dist:esm": "tsc -p tsconfig.dist.esm.json --noEmit --pretty",
 		"check:ts:dist:cjs": "tsc -p tsconfig.dist.cjs.json --noEmit --pretty",
-		"check:lint": "eslint --color .",
 		"build": "npm-run-all build:* --print-label",
 		"build:esm": "rimraf ./dist/esm && tsc -p tsconfig.dist.esm.json && node ./scripts/post-build.mjs esm",
 		"build:cjs": "rimraf ./dist/cjs && tsc -p tsconfig.dist.cjs.json && node ./scripts/post-build.mjs cjs",
@@ -45,22 +43,14 @@
 		"pack": "node ./scripts/pack.mjs"
 	},
 	"devDependencies": {
-		"@eslint-community/eslint-plugin-eslint-comments": "^4.4.1",
-		"@eslint/compat": "^1.2.4",
-		"@eslint/js": "^9.17.0",
 		"@rollup/plugin-terser": "^0.4.4",
 		"@rollup/plugin-typescript": "^12.1.2",
 		"@types/node": "22",
-		"eslint": "^9.17.0",
-		"eslint-config-prettier": "^9.1.0",
-		"eslint-plugin-jsdoc": "^50.6.1",
-		"eslint-plugin-prettier": "^5.2.1",
 		"expect-type": "^1.1.0",
 		"npm-run-all": "^4.1.5",
 		"rimraf": "^6.0.1",
 		"rollup": "^4.29.1",
 		"tsx": "^4.19.2",
-		"typescript": "^5.7.2",
-		"typescript-eslint": "^8.18.2"
+		"typescript": "^5.7.2"
 	}
 }
