@@ -4,4 +4,4 @@
 
 Linear, in-memory migrations for versioned objects.
 
-- [TypeScript & JavaScript](./ts/object-migrations/)
+- [JavaScript](./ts/object-migrations/)

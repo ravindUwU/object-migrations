@@ -4,6 +4,10 @@
 
 [![NPM](https://img.shields.io/npm/v/object-migrations)](https://www.npmjs.com/package/object-migrations)
 
+- `npm install object-migrations`
+- https://cdn.jsdelivr.net/npm/object-migrations/dist/bundle/
+- https://www.unpkg.com/browse/object-migrations/dist/bundle/
+
 ## Usage
 
 1. Make a migrator.
